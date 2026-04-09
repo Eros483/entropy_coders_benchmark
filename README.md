@@ -96,6 +96,9 @@ Each entropy coder follows the same pattern: encode produces an Element object, 
 
 `FilePaths.DATA` lists benchmark files: `tiny.txt`, `medium.txt`, `aliceinwonderland.txt`, several `.fna` genome files, `bible.txt`. These must exist in `Data/` for load tests and benchmarks to run.
 
+This directory has also been extended with benchmark files from the [Canterbury corpus](https://corpus.canterbury.ac.nz/descriptions/).
+    - These are pending testing post fix of code.
+
 ## Known Issues
 
 ### Arithmetic OOM on large files
