@@ -1,25 +1,12 @@
-import java.io.ByteArrayOutputStream;
 import java.util.HashMap;
 
 /**
  * Streaming rANS with 64-bit state, byte-level renormalization. O(N).
- *
- * <h2>Byte-sync</h2>
- * Encoder pushes bytes (LSB-first) when state >= ENC_UPPER.  These bytes
- * are stored in REVERSE order so that the decoder (which decodes LIFO)
- * reads them in the correct push-reverse sequence.
- *
- * ENC_UPPER = 2^24,  DEC_LOWER = 2^16.
- * After encoder pushes: state < 2^16.  Decoder pulls when state < 2^16.
- * Since ENC_UPPER / 256 = 65536 = DEC_LOWER, the thresholds are matched.
- *
- * Output: [8-byte state (BE)] [norm bytes in reverse push order].
  */
 public class rANS {
 
     private static final int R    = 1 << 16;
-    private static final long ENC_UPPER = 1L << 24;
-    private static final long DEC_LOWER = 1L << 16;
+    private static final long L   = 1L << 24; // Lower bound for state
 
     /* ---- Frequency table ---- */
 
@@ -70,34 +57,40 @@ public class rANS {
         if (input == null || input.length == 0) return new rANSElement();
 
         FreqInfo f = buildFreqInfo(input);
-
-        // Collect norm bytes in forward order, then reverse at write time
         java.util.ArrayList<Byte> normList = new java.util.ArrayList<>();
-        long state = 0;
+
+        // Initial state MUST be the lower bound to maintain symmetry
+        long state = L;
 
         for (int s : input) {
             int idx = f.symToIdx.get(s);
+            int fr = f.freqs[idx];
+            int cs = f.cumFreqs[idx];
 
-            // Push renorm bytes when state too large
-            while (state >= ENC_UPPER) {
+            // Push renorm bytes: limit depends on the frequency of the current symbol
+            long limit = (L >>> 8) * fr;
+            while (state >= limit) {
                 normList.add((byte)(state & 0xFF));
                 state >>>= 8;
             }
 
-            // Encode: C(s, state) = floor(state/fs)*R + (state%fs) + cf[s]
-            int fr = f.freqs[idx];
-            int cs = f.cumFreqs[idx];
+            // Encode: C(s, state) = (state / fr) * R + (state % fr) + cs
             state = (state / fr) * R + (state % fr) + cs;
         }
 
-        // Output: [8-byte state (BE)] [norm bytes in reverse push order]
-        // Reverse so decoder reads them in the order the encoder pushed
-        // (LIFO consumes the last pushed byte first).
         byte[] data = new byte[8 + normList.size()];
-        for (int i = 0; i < 8; i++)
-            data[7 - i] = (byte)(state & 0xFF);
-        for (int i = 0; i < normList.size(); i++)
+        
+        // Write 64-bit state (BE). Fixed: shifting tempState to capture all bytes.
+        long tempState = state;
+        for (int i = 0; i < 8; i++) {
+            data[7 - i] = (byte)(tempState & 0xFF);
+            tempState >>>= 8;
+        }
+        
+        // Output norm bytes in reverse push order (LIFO)
+        for (int i = 0; i < normList.size(); i++) {
             data[8 + normList.size() - 1 - i] = normList.get(i);
+        }
 
         return new rANSElement(data, f.alphabet, f.cumFreqs, input.length);
     }
@@ -111,10 +104,11 @@ public class rANS {
         byte[] data = el.encodedBytes;
 
         long state = 0;
-        for (int i = 0; i < 8; i++)
+        for (int i = 0; i < 8; i++) {
             state = (state << 8) | (data[i] & 0xFF);
+        }
 
-        int ptr = 8;  // reads norm bytes in reversed order (encoder-last first)
+        int ptr = 8; 
 
         for (int i = originalLength - 1; i >= 0; i--) {
             int sIdx = (int)(state % R);
@@ -125,19 +119,22 @@ public class rANS {
                 if (sIdx >= el.cumFreqs[mid]) {
                     if (sIdx < el.cumFreqs[mid + 1]) { sym = mid; break; }
                     lo = mid + 1;
-                } else hi = mid - 1;
+                } else {
+                    hi = mid - 1;
+                }
             }
             if (sym == -1)
-                throw new RuntimeException("rANS decode step " + i +
-                    ": no sym for sIdx=" + sIdx);
+                throw new RuntimeException("rANS decode step " + i + ": no sym for sIdx=" + sIdx);
 
             int fr = el.cumFreqs[sym + 1] - el.cumFreqs[sym];
             state = (long)fr * (state / R) + (state % R) - el.cumFreqs[sym];
             result[i] = el.alphabet[sym];
 
-            if (i > 0 && state < DEC_LOWER) {
-                if (ptr >= data.length)
+            // Renormalize: MUST be a while loop. Extremely rare symbols might need >1 byte read
+            while (state < L) {
+                if (ptr >= data.length) {
                     throw new RuntimeException("rANS decode: out of bytes step " + i);
+                }
                 state = (state << 8) | (data[ptr] & 0xFF);
                 ptr++;
             }
