@@ -1,11 +1,9 @@
 import java.util.HashMap;
+import java.io.ByteArrayOutputStream;
 
 /**
  * Arithmetic coder using Witten-Neal-Cleary byte-renormalization.
  * 16-bit precision, O(N) streaming encode/decode.
- *
- * Memory: Output buffer uses gradual growth (25% + 1MB chunks) rather than
- * ByteArrayOutputStream doubling, avoiding OOM on large inputs.
  */
 public class Arithmetic {
 
@@ -44,35 +42,47 @@ public class Arithmetic {
             f.freqs[i] = Math.max(1, (int)((long)raw.get(f.alphabet[i]) * TF / total));
             sum += f.freqs[i];
         }
+
+        // Handle Overshoot (The bug fix!)
+        while (sum > TF) {
+            int best = -1;
+            int maxFreq = 0;
+            for (int i = 0; i < n; i++) {
+                if (f.freqs[i] > maxFreq) {
+                    maxFreq = f.freqs[i];
+                    best = i;
+                }
+            }
+            if (best == -1 || f.freqs[best] <= 1) break;
+            f.freqs[best]--;
+            sum--;
+        }
+
+        // Handle Undershoot
         while (sum < TF) {
-            int best = -1; double bestD = 0;
+            int best = -1; double bestD = -1.0;
             for (int i = 0; i < n; i++) {
                 double d = (double)raw.get(f.alphabet[i]) * TF / total - f.freqs[i];
                 if (best == -1 || d > bestD) { bestD = d; best = i; }
             }
             f.freqs[best]++; sum++;
         }
+
         f.cumFreqs[0] = 0;
         for (int i = 0; i < n; i++) f.cumFreqs[i+1] = f.cumFreqs[i] + f.freqs[i];
         return f;
     }
 
-    /* ---- Bit buffer with gradual growth ---- */
+    /* ---- Bit buffer (Now back to memory, much faster) ---- */
     private static class BitBuf {
-        private byte[] buf;
-        private int pos = 0;
-        /* running bit accumulator */
+        private final ByteArrayOutputStream out = new ByteArrayOutputStream();
         private int acc = 0, nBits = 0;
-
-        BitBuf(int cap) { buf = new byte[cap]; }
 
         void bit(int b) {
             acc = (acc << 1) | (b & 1);
             nBits++;
             if (nBits == 8) {
-                if (pos == buf.length)
-                    buf = java.util.Arrays.copyOf(buf, buf.length + Math.max(buf.length >> 2, 1 << 20));
-                buf[pos++] = (byte) acc;
+                out.write(acc);
                 acc = 0;
                 nBits = 0;
             }
@@ -81,15 +91,13 @@ public class Arithmetic {
         void finish() {
             if (nBits > 0) {
                 acc <<= (8 - nBits);
-                if (pos == buf.length)
-                    buf = java.util.Arrays.copyOf(buf, buf.length + Math.max(buf.length >> 2, 1 << 20));
-                buf[pos++] = (byte) acc;
-                acc = 0;
-                nBits = 0;
+                out.write(acc);
             }
         }
 
-        byte[] bytes() { return java.util.Arrays.copyOf(buf, pos); }
+        byte[] bytes() {
+            return out.toByteArray();
+        }
     }
 
     /* ---- Bit reader ---- */
@@ -115,8 +123,7 @@ public class Arithmetic {
         if (input == null || input.length == 0) return new ArithmeticElement();
 
         FreqInfo f = build(input);
-        // Estimate: ~input.length/4 output bytes, min 64KB
-        BitBuf buf = new BitBuf(Math.max(input.length / 3 + 4096, 1 << 16));
+        BitBuf buf = new BitBuf();
 
         int low = 0, high = MAX_RANGE - 1;
         int followOn = 0;
