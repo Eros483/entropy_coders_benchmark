@@ -41,6 +41,11 @@ java -cp bin RunBench --schemes LZ77+rANS,LZ77+Arith                    # LZ77+r
 java -cp bin RunBench --schemes LZ77+rANS,LZ77+Arith --files bible.txt  # two schemes on one file
 ````
 
+- **Note**:
+JVM may run into OOM on java heap space on `T.nigroviridis.fna`. Use the following command to circumvent it.
+````bashjava -Xmx6g -cp bin RunBench --schemes LZSS+Huffman BWT+MTF+Huffman --files T.nigroviridis.fna````
+
+
 Current entry-point roles:
 
 - `Test` runs correctness checks for the core algorithms and then runs the Huffman-based `Master` pipelines over the default dataset.
@@ -129,5 +134,10 @@ The default dataset list used by `Master` and `RunBench` comes from [`FilePaths.
 These are a mix of genome files and text/program-source style benchmark files, including Canterbury-style additions such as `alice29.txt`, `asyoulik.txt`, `cp.html`, `fields.c`, `lcet10.txt`, `plrabn12.txt`, and `xargs.1`.
 
 ## TODO
+- [x] Implement rANS and Arithmetic entropy encodings in O(n)
 - [ ] Implement LZ78 and LZW
 - [ ] Implement BWT+MTF, LZ78 and LZW varations with rANS and Arithmetic coding, and benchmark it.
+- [ ] Determine at what size is there scope for JVM running out of memory.
+    - Refer to the note in instructions on how to run the benchmark.
+    - Note: Failed to run BWT+MTF+Huffman on `T.nigroviridis.fna` with even 6 gb heap.
+
