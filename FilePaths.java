@@ -9,23 +9,27 @@ public final class FilePaths {
 	public static final String LZSS_COMPRESSED_DIRECTORY = OUTPUT_DIRECTORY + "LZSS/";
 
 	public static final String DATA[] = {
-			"tiny.txt",
-			"medium.txt",
-			"aliceinwonderland.txt",
-			"H.pylori.fna",
-			"L.monocytogenes.fna",
-			"bible.txt",
-			"E.Coli.fna",
-			"S.cerevisiae.fna",
-			"N.crassa.fna",
-			"C.elegans.fna" };
-	public static final int NUM_DATA = 10;
+				"C.elegans.fna",
+				"E.Coli.fna",
+				"H.pylori.fna",
+				"lcet10.txt",
+				"L.monocytogenes.fna",
+				"N.crassa.fna",
+				"S.cerevisiae.fna",
+				"T.nigroviridis.fna",
+				"alice29.txt",
+				"aliceinwonderland.txt",
+				"asyoulik.txt",
+				"bible.txt",
+				"cp.html",
+				"medium.txt",
+				"tiny.txt",
+				"xargs.1",
+				"fields.c",
+				"plrabn12.txt",
+		};
 
-	/**
-	 * Large DNA file. You do not have to run this.
-	 */
-//	 public static final String DATA[] = { "T.nigroviridis.fna"};
-//	 public static final int NUM_DATA = 1;
+		public static final int NUM_DATA = 17;
 
 	public static final String ALPHABET_EXTENSION = ".alpha";
 
