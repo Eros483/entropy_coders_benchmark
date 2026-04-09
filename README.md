@@ -1,117 +1,129 @@
-# Benchmarking Huffman, Arithmetic and rANS entropy encoding mechanisms
+# Benchmarking Huffman, Arithmetic and rANS Entropy Coding Pipelines
 
 ## Project Overview
 
-A Java implementation of multiple data compression algorithms for a college project. Pipelines combine transforms (BWT, LZ77, LZSS) with entropy coders (Huffman, Arithmetic, rANS), with full encode/decode round-trip verification.
+This project benchmarks multiple lossless compression pipelines written in plain Java. The transform layer uses `LZ77`, `LZSS`, and `BWT + MTF`, and the entropy layer uses `Huffman`, `Arithmetic`, and `rANS` where supported.
 
-**Java 17** — no build tool or external dependencies.
+The codebase is focused on:
 
-## Compilation & Execution
+- round-trip correctness
+- comparing compressed size across schemes
+- running the same pipelines across a mixed text and genome dataset
 
-```bash
-javac -d bin *.java              # compile all sources
-java -cp bin Test                # correctness + load tests (all pipelines with Huffman)
-java -cp bin TestRANS            # rANS unit tests + LZ77+rANS pipeline round-trip
-java -cp bin RunBench            # unified benchmark: all 5 schemes on all Data/ files
-java -cp bin RunBench --files f1.txt,f2.txt  # all schemes on specific files
-java -cp bin RunBench --schemes LZ77+rANS,LZ77+Arith  # specific schemes, all files
-java -cp bin RunBench --schemes LZ77+Arith --files bible.txt  # one scheme, one file
-```
+No build tool or external dependencies are required. The project compiles with `javac`.
 
-`Benchmark.java` (4 schemes) and `BenchmarkArithmetic.java` (8 schemes) still exist but `RunBench` is the primary entry point.
+## Compilation And Execution
 
-`Master` has no `main` method — its pipelines (`lz77()`, `lzss()`, `bwt()`) are invoked from `Test.loadTest()`.
+- Compilation
+````bash
+javac -d bin *.java
+````
 
-## Directory Structure
+- Basic Tests
 
-- All `.java` source files are in the repository root.
-- `Data/` (gitignored) — input text/genome files for benchmarking.
-- `Data/OutputJava/` (gitignored) — compressed output files.
-- `bin/` (gitignored) — compiled `.class` files.
+````bash
+java -cp bin Test
+java -cp bin TestRANS
+````
+
+- Running the benchmark
+````bash
+java -cp bin RunBench
+````
+
+- Arguments for running the benchmark with more specifications
+````bash
+# Unified benchmark: LZ77, LZSS, BWT/MTF x Huffman / Arithmetic / rANS
+
+java -cp bin RunBench                                                   # all 8 schemes, all Data/ files
+java -cp bin RunBench --files tiny.txt,L.monocytogenes.fna              # all schemes, specific files
+java -cp bin RunBench --schemes LZ77+rANS,LZ77+Arith                    # LZ77+rANS and LZ77+Arith, all files
+java -cp bin RunBench --schemes LZ77+rANS,LZ77+Arith --files bible.txt  # two schemes on one file
+````
+
+Current entry-point roles:
+
+- `Test` runs correctness checks for the core algorithms and then runs the Huffman-based `Master` pipelines over the default dataset.
+- `TestRANS` runs standalone rANS unit tests plus an `LZ77 + rANS` pipeline test.
+- `RunBench` is the main benchmark driver.
+- `Benchmark` and `BenchmarkArithmetic` still compile, but they are legacy runners now.
+
+## Active Benchmark Matrix
+
+`RunBench` currently benchmarks these 5 schemes:
+
+| Scheme | Transform path | Entropy coder |
+|---|---|---|
+| `LZ77+Huffman` | Data -> LZ77 triplets | Huffman |
+| `LZ77+Arith` | Data -> LZ77 triplets | Arithmetic |
+| `LZ77+rANS` | Data -> LZ77 triplets | rANS |
+| `LZSS+Huffman` | Data -> LZSS streams | Huffman |
+| `BWT+MTF+Huffman` | Data -> BWT -> MTF | Huffman |
+
+Although the codebase still contains arithmetic and rANS support outside this exact matrix, `RunBench` itself currently activates the 5 schemes above.
 
 ## High-Level Architecture
 
-### Compression Pipelines
+### Pipelines
 
-The project runs data through a transform, then entropy-codes the result. Each pipeline is reversible — decompress and verify round-trip equality.
-
-| Pipeline | Flow | Entropy coder | Output streams |
-|---|---|---|---|
-| **LZ77** | Data → LZ77 triplets (delta, length, next) | Huffman (Arithmetic/rANS also supported, not benchmarked) | 3 encoded streams |
-| **LZSS** | Data → LZSS (delta, length, next + identifier bits) | Huffman per stream | identifier (raw bits) + 3 encoded streams |
-| **BWT** | Data → BWT → MTF | Huffman only (Arithmetic/rANS also supported, not benchmarked) | MTF index stream + alphabet |
-
-LZ77 uses WINDOW=1024, LOOKAHEAD=128. LZSS adds LENGTH_THRESHOLD=4 (matches ≤4 chars are encoded as literals rather than back-references).
+| Pipeline | Output representation | Notes |
+|---|---|---|
+| `LZ77` | `delta`, `length`, `next` streams | `WINDOW = 1024`, `LOOKAHEAD = 128` |
+| `LZSS` | identifier bits + `delta`, `length`, `next` streams | `LENGTH_THRESHOLD = 4` |
+| `BWT + MTF` | MTF index stream + stored alphabet | alphabet is saved separately for decode |
 
 ### Entropy Coders
 
-Each entropy coder follows the same pattern: encode produces an Element object, decode consumes it. IO helpers write/read to disk.
-
-| Coder | Input/Output | Disk format | Notes |
+| Coder | Input type | On-disk format | Notes |
 |---|---|---|---|
-| **Huffman** | `ArrayList<Integer>` → `HuffmanElement` | `.huffman.encoding` (packed bytes) + `.huffman.map` (text mapping) | PriorityQueue-based tree, variable-length codes |
-| **Arithmetic** | `int[]` → `ArithmeticElement` | `.ar` (single binary blob) | Witten-Neal-Cleary with 16-bit precision, TF=4096. O(n) **BUT** buffers entire output in memory — see Known Issues below |
-| **rANS** | `int[]` → `rANSElement` | `.rans` (single binary blob) | 64-bit state, byte-level renormalization. O(n) streaming — see Known Issues below |
+| `Huffman` | `ArrayList<Integer>` | `.huffman.encoding` + `.huffman.map` | tree-based variable-length coding |
+| `Arithmetic` | `int[]` | single `.ar`-style binary blob via `ArithmeticIOHelper` | 16-bit Witten-Neal-Cleary style coder |
+| `rANS` | `int[]` | single `.rans`-style binary blob via `rANSIOHelper` | 64-bit state with byte renormalization |
 
-### Key Design Notes
+### Important Support Files
 
-- **Arithmetic and rANS accept `int[]` input**, while Huffman accepts `ArrayList<Integer>`. The helper `toInt(ArrayList<Integer>)` bridges between them.
-- **LZSS identifiers** (bit string of literal vs back-reference flags) are stored raw via `BitPacker`, not entropy-coded.
-- **BWT pipeline stores the alphabet** separately (`.alpha` file) because MTF decoding requires it. This is true for all BWT entropy coder variants.
-- **Huffman writes two files** per stream (packed data + mapping table), while Arithmetic and rANS each write a single blob. This affects compressed size calculations.
-
-### Element Classes
-
-| Class | Streams | Used by |
-|---|---|---|
-| `HuffmanElement` | encoding string + mapping table | All Huffman encoding |
-| `ArithmeticElement` | encoded bytes + cumFreqs | Arithmetic coding |
-| `rANSElement` | encoded bytes + alphabet + cumFreqs + originalLength | rANS coding |
-| `LZ77Element` | delta (int) + length (int) + next (char) | LZ77 |
-| `LZSSElement` | identifier (String) + delta + length + next | LZSS |
-| `MTFElement` | alphabet (char) + mtf (int) | MTF |
-
-### Supporting Utilities
-
-| File | Role |
+| File | Purpose |
 |---|---|
-| `HelperFunctions.java` | Type conversions (char↔int), alphabet extraction, frequency counting, equality verification |
-| `IOHelper.java` | File read/write, byte I/O, alphabet/mapping serialization, file size queries |
-| `BitPacker.java` | Packs/unpacks bit strings to/from byte arrays |
-| `FilePaths.java` | Path constants, data file list, extension definitions |
-| `SuffixArray.java` | Two implementations: brute-force O(n² log n) and Manber-Myers O(n log² n). Controlled by `USE_MANBER_MYERS` flag (default: false) |
+| `FilePaths.java` | central path constants, file lists, and extensions |
+| `IOHelper.java` | raw file, byte, map, alphabet, and size I/O |
+| `HelperFunctions.java` | conversions, alphabet helpers, and equality checking |
+| `BitPacker.java` | packs and unpacks identifier bitstrings |
+| `ArithmeticIOHelper.java` | serialization for `ArithmeticElement` |
+| `rANSIOHelper.java` | serialization for `rANSElement` |
+| `SuffixArray.java` | suffix-array support for BWT |
 
-### Entry Points
+## Entry Points
 
-| Class | What it does |
+| Class | Role |
 |---|---|
-| `Test` | Unit correctness tests for individual algorithms + full pipeline load test via `Master` |
-| `TestRANS` | Standalone rANS correctness tests + LZ77+rANS round-trip on a data file |
-| `Master` | Pipeline runner — compresses then decompresses all `Data/` files via LZ77, LZSS, BWT (with Huffman). No standalone `main()` |
-| `RunBench` | **Primary benchmark** — all 8 schemes on `Data/` files. Supports `--schemes` and `--files` flags for selective runs. Supersedes `Benchmark` and `BenchmarkArithmetic`. |
-| `Benchmark` | Legacy 4-scheme runner. Still functional but use `RunBench` for new work. |
-| `BenchmarkArithmetic` | Legacy 8-scheme runner. Still functional but use `RunBench` for new work. |
+| `Test` | unit tests for Huffman, suffix arrays, bit packing, LZ77, LZSS, BWT, and MTF, followed by full Huffman pipeline tests through `Master` |
+| `TestRANS` | standalone rANS unit tests and an `LZ77 + rANS` end-to-end round trip |
+| `Master` | runs compress + expand for `LZ77`, `LZSS`, and `BWT + MTF`, all with Huffman |
+| `RunBench` | primary benchmark runner with `--files` and `--schemes` filtering |
+| `Benchmark` | older benchmark runner kept for comparison / backup |
+| `BenchmarkArithmetic` | older wider benchmark runner kept for comparison / backup |
 
-### Dataset
+## Dataset
 
-`FilePaths.DATA` lists benchmark files: `tiny.txt`, `medium.txt`, `aliceinwonderland.txt`, several `.fna` genome files, `bible.txt`. These must exist in `Data/` for load tests and benchmarks to run.
+The default dataset list used by `Master` and `RunBench` comes from [`FilePaths.java`](/home/arnab/code/collegeCode/sem6/applications/Project-Initial/FilePaths.java) and currently includes:
 
-This directory has also been extended with benchmark files from the [Canterbury corpus](https://corpus.canterbury.ac.nz/descriptions/).
-    - These are pending testing post fix of code.
+- `C.elegans.fna`
+- `E.Coli.fna`
+- `H.pylori.fna`
+- `lcet10.txt`
+- `L.monocytogenes.fna`
+- `N.crassa.fna`
+- `S.cerevisiae.fna`
+- `T.nigroviridis.fna`
+- `alice29.txt`
+- `aliceinwonderland.txt`
+- `asyoulik.txt`
+- `bible.txt`
+- `cp.html`
+- `medium.txt`
+- `tiny.txt`
+- `xargs.1`
+- `fields.c`
+- `plrabn12.txt`
 
-## Known Issues
-
-### Arithmetic OOM on large files
-
-`Arithmetic.encode()` buffers the entire compressed output in a byte array before returning. For bible.txt (4MB), the MTF stream produces ~2MB of output bytes. The `BitBuf` grows via `Arrays.copyOf` which allocates a full copy each time. With 25% growth + 1MB chunks, reaching ~2MB requires multiple full-array copies, and the peak memory (old + new buffer simultaneously) exceeds the heap limit.
-
-**Root cause**: The in-memory `ArithmeticElement` must hold all encoded bytes. The fix is to stream encoded bytes directly to a file (via `DataOutputStream`) instead of buffering, then read them back with a custom file reader that doesn't load the entire stream into memory at once.
-
-### rANS decode failure
-
-`TestRANS` fails on first test case with `sIdx=-21332` in `rANS.decode()`. The negative index indicates the internal state variable is corrupted — likely from byte-ordering issues in how the final state is serialized/deserialized, or from the renormalization byte sequence being read in wrong order. The rANS encode/ decode pair works correctly in isolation when tested via `java -cp bin Test` for other transforms but breaks in the standalone TestRANS tests.
-
-**Status**: Needs investigation. The rANS.java file was rewritten from a BigInteger-based O(n²) version to a 64-bit streaming version. The transition may have introduced a subtle bug in the decode path.
-
-### Testable Files
-- Only works on `tiny.txt`, and `medium.txt` so far, other implementations are buggy.
+These are a mix of genome files and text/program-source style benchmark files, including Canterbury-style additions such as `alice29.txt`, `asyoulik.txt`, `cp.html`, `fields.c`, `lcet10.txt`, `plrabn12.txt`, and `xargs.1`.
