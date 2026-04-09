@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 /**
  * Arithmetic coder using Witten-Neal-Cleary byte-renormalization.
  * 16-bit precision, O(N) streaming encode/decode.
+ * Works appropriately for non-streaming setups now.
  */
 public class Arithmetic {
 
