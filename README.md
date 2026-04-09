@@ -127,3 +127,7 @@ The default dataset list used by `Master` and `RunBench` comes from [`FilePaths.
 - `plrabn12.txt`
 
 These are a mix of genome files and text/program-source style benchmark files, including Canterbury-style additions such as `alice29.txt`, `asyoulik.txt`, `cp.html`, `fields.c`, `lcet10.txt`, `plrabn12.txt`, and `xargs.1`.
+
+## TODO
+- [ ] Implement LZ78 and LZW
+- [ ] Implement BWT+MTF, LZ78 and LZW varations with rANS and Arithmetic coding, and benchmark it.
