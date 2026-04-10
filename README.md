@@ -46,7 +46,9 @@ java -cp bin RunBench --schemes LZ77+rANS,LZ77+Arith --files bible.txt  # two sc
 
 - **Note**:
 JVM may run into OOM on java heap space on `T.nigroviridis.fna`. Use the following command to circumvent it.
-````bashjava -Xmx6g -cp bin RunBench --schemes LZSS+Huffman BWT+MTF+Huffman --files T.nigroviridis.fna````
+````bash
+java -Xmx6g -cp bin RunBench --schemes LZSS+Huffman,BWT+MTF+Huffman --files T.nigroviridis.fna
+````
 
 
 Current entry-point roles:
