@@ -60,6 +60,8 @@ Current entry-point roles:
 
 ## Active Benchmark Matrix
 
+Note: BWT+MTF leading to out of memory error (File: T.nigroviridis.fna)
+
 `RunBench` currently benchmarks these 5 schemes:
 
 | Scheme | Transform path | Entropy coder |
