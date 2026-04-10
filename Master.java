@@ -1,4 +1,3 @@
-
 import java.util.ArrayList;
 
 public class Master {
@@ -16,6 +15,129 @@ public class Master {
 	public static void bwt() throws Exception {
 		bwt_compress();
 		bwt_expand();
+	}
+
+	public static void lzw() throws Exception {
+		lzw_compress();
+		lzw_expand();
+	}
+
+	public static void lz78() throws Exception {
+		lz78_compress();
+		lz78_expand();
+	}
+
+	private static void lz78_compress() throws Exception {
+		for (int i = 0; i < FilePaths.NUM_DATA; i++) {
+			long startTime = System.currentTimeMillis();
+			String path = FilePaths.DATA_DIRECTORY + FilePaths.DATA[i];
+			String outDir = FilePaths.OUTPUT_DIRECTORY + "LZ78/";
+			new java.io.File(outDir).mkdirs();
+			String idxPath = outDir + FilePaths.DATA[i] + ".idx";
+			String charPath = outDir + FilePaths.DATA[i] + ".char";
+
+			System.out.println("\n**********************");
+			System.out.println("\nReading file: " + path);
+			ArrayList<Character> data = IOHelper.readFile(path);
+
+			System.out.println("Data -> LZ78 Phase...");
+			LZ78Element lz78 = LZ78.encode(data);
+
+			System.out.println("LZ78 -> Huffman Phase...");
+			HuffmanElement huff_Idx = Huffman.encode(lz78.dictIndex);
+			HuffmanElement huff_Char = Huffman.encode(HelperFunctions.charsToInts(lz78.nextChar));
+
+			System.out.println("Writing compressed files...");
+			HuffmanIOHelper.writeHuffman(huff_Idx, idxPath);
+			HuffmanIOHelper.writeHuffman(huff_Char, charPath);
+
+			System.out.printf("\nCompression took %.2f seconds\n", (System.currentTimeMillis() - startTime) / 1000d);
+			long filesize = IOHelper.filesize(path);
+			long compressedSize = IOHelper.filesize(idxPath + FilePaths.HUFFMAN_MAP_EXTENSION) +
+					IOHelper.filesize(idxPath + FilePaths.HUFFMAN_ENCODING_EXTENSION) +
+					IOHelper.filesize(charPath + FilePaths.HUFFMAN_MAP_EXTENSION) +
+					IOHelper.filesize(charPath + FilePaths.HUFFMAN_ENCODING_EXTENSION);
+			System.out.println("Original File Size = " + filesize + " bytes");
+			System.out.println("Compressed File Size = " + compressedSize + " bytes");
+			System.out.printf("Compression Ratio = %.2f\n", 1.00 * filesize / compressedSize);
+		}
+	}
+
+	public static void lz78_expand() throws Exception {
+		for (int i = 0; i < FilePaths.NUM_DATA; i++) {
+			System.out.println("\n**********************");
+			String path = FilePaths.DATA_DIRECTORY + FilePaths.DATA[i];
+			ArrayList<Character> data = IOHelper.readFile(path);
+
+			String outDir = FilePaths.OUTPUT_DIRECTORY + "LZ78/";
+			String idxPath = outDir + FilePaths.DATA[i] + ".idx";
+			String charPath = outDir + FilePaths.DATA[i] + ".char";
+
+			long startTime = System.currentTimeMillis();
+			System.out.println("Reading compressed files...");
+			HuffmanElement huff_Idx = HuffmanIOHelper.readHuffman(idxPath);
+			HuffmanElement huff_Char = HuffmanIOHelper.readHuffman(charPath);
+
+			System.out.println("Huffman -> LZ78 Phase...");
+			ArrayList<Integer> decoded_Idx = Huffman.decode(huff_Idx);
+			ArrayList<Character> decoded_Char = HelperFunctions.intsToChars(Huffman.decode(huff_Char));
+
+			System.out.println("LZ78 -> Decoded Data Phase...");
+			LZ78Element decodedTriplet = new LZ78Element(decoded_Idx, decoded_Char);
+			ArrayList<Character> decodedData = LZ78.decode(decodedTriplet);
+
+			System.out.printf("\nDecompression took %.2f seconds\n", (System.currentTimeMillis() - startTime) / 1000d);
+			HelperFunctions.verifyEquality(data, decodedData);
+		}
+	}
+
+	private static void lzw_compress() throws Exception {
+		for (int i = 0; i < FilePaths.NUM_DATA; i++) {
+			long startTime = System.currentTimeMillis();
+			String path = FilePaths.DATA_DIRECTORY + FilePaths.DATA[i];
+
+			String lzwOutputPath = FilePaths.OUTPUT_DIRECTORY + "LZW/" + FilePaths.DATA[i] + ".lzw";
+			new java.io.File(FilePaths.OUTPUT_DIRECTORY + "LZW/").mkdirs();
+
+			System.out.println("\n**********************");
+			System.out.println("\nReading file: " + path);
+			ArrayList<Character> data = IOHelper.readFile(path);
+
+			System.out.println("Data -> LZW Phase...");
+			byte[] compressedBytes = LZW.encode(data);
+
+			System.out.println("Writing compressed file...");
+			IOHelper.writeBytes(compressedBytes, lzwOutputPath);
+
+			System.out.printf("\nCompression took %.2f seconds\n", (System.currentTimeMillis() - startTime) / 1000d);
+			long filesize = IOHelper.filesize(path);
+			long compressedSize = IOHelper.filesize(lzwOutputPath);
+
+			System.out.println("\nOriginal File Size = " + filesize + " bytes");
+			System.out.println("Compressed File Size = " + compressedSize + " bytes");
+			System.out.printf("Compression Ratio = %.2f\n", 1.00 * filesize / compressedSize);
+		}
+	}
+
+	private static void lzw_expand() throws Exception {
+		for (int i = 0; i < FilePaths.NUM_DATA; i++) {
+			System.out.println("\n**********************");
+			String path = FilePaths.DATA_DIRECTORY + FilePaths.DATA[i];
+			ArrayList<Character> originalData = IOHelper.readFile(path);
+
+			String lzwOutputPath = FilePaths.OUTPUT_DIRECTORY + "LZW/" + FilePaths.DATA[i] + ".lzw";
+			long startTime = System.currentTimeMillis();
+
+			System.out.println("Reading compressed file...");
+			byte[] compressedBytes = IOHelper.readBytes(lzwOutputPath);
+
+			System.out.println("LZW -> Decoded Data Phase...");
+			ArrayList<Character> decodedData = LZW.decode(compressedBytes);
+
+			System.out.printf("\nDecompression took %.2f seconds\n", (System.currentTimeMillis() - startTime) / 1000d);
+
+			HelperFunctions.verifyEquality(originalData, decodedData);
+		}
 	}
 
 	private static void lz77_compress() throws Exception {

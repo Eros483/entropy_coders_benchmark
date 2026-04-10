@@ -135,8 +135,9 @@ These are a mix of genome files and text/program-source style benchmark files, i
 
 ## TODO
 - [x] Implement rANS and Arithmetic entropy encodings in O(n)
-- [ ] Implement LZ78 and LZW
-- [ ] Implement BWT+MTF, LZ78 and LZW varations with rANS and Arithmetic coding, and benchmark it.
+- [x] Implement LZ78 and LZW
+    - [ ] LZ78 and LZW need optimization
+- [x] Implement BWT+MTF, LZ78 and LZW varations with rANS and Arithmetic coding, and benchmark it.
 - [ ] Determine at what size is there scope for JVM running out of memory.
     - Refer to the note in instructions on how to run the benchmark.
     - Note: Failed to run BWT+MTF+Huffman on `T.nigroviridis.fna` with even 6 gb heap.
