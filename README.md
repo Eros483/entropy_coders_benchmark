@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-This project benchmarks multiple lossless compression pipelines written in plain Java. The transform layer uses `LZ77`, `LZSS`, and `BWT + MTF`, and the entropy layer uses `Huffman`, `Arithmetic`, and `rANS` where supported.
+This project benchmarks multiple lossless compression pipelines written in plain Java. The transform layer uses `LZ77`, `LZSS`, `BWT + MTF`, `LZ78`, and `LZW`, and the entropy layer uses `Huffman`, `Arithmetic`, and `rANS` where supported.
 
 The codebase is focused on:
 
@@ -16,40 +16,37 @@ No build tool or external dependencies are required. The project compiles with `
 
 ## Download Data Folder: [Google Drive](https://drive.google.com/file/d/1Atd143ZsA6HaBL1MPAJuAJvgYFYET0Jo/view)
 
-
 - Compilation
-````bash
+```bash
 javac -d bin *.java
-````
+```
 
 - Basic Tests
-
-````bash
+```bash
 java -cp bin Test
 java -cp bin TestRANS
-````
+```
 
 - Running the benchmark
-````bash
+```bash
 java -cp bin RunBench
-````
+```
 
 - Arguments for running the benchmark with more specifications
-````bash
-# Unified benchmark: LZ77, LZSS, BWT/MTF x Huffman / Arithmetic / rANS
+```bash
+# Unified benchmark: LZ77, LZSS, BWT/MTF, LZ78, LZW x Huffman / Arithmetic / rANS
 
-java -cp bin RunBench                                                   # all 8 schemes, all Data/ files
+java -cp bin RunBench                                                   # all schemes, all Data/ files
 java -cp bin RunBench --files tiny.txt,L.monocytogenes.fna              # all schemes, specific files
 java -cp bin RunBench --schemes LZ77+rANS,LZ77+Arith                    # LZ77+rANS and LZ77+Arith, all files
-java -cp bin RunBench --schemes LZ77+rANS,LZ77+Arith --files bible.txt  # two schemes on one file
-````
+java -cp bin RunBench --schemes LZ78+rANS,LZW+Arith --files bible.txt   # two schemes on one file
+```
 
 - **Note**:
-JVM may run into OOM on java heap space on `T.nigroviridis.fna`. Use the following command to circumvent it.
-````bash
+JVM may run into OOM on java heap space on `T.nigroviridis.fna`. Use the following command to circumvent it:
+```bash
 java -Xmx6g -cp bin RunBench --schemes LZSS+Huffman,BWT+MTF+Huffman --files T.nigroviridis.fna
-````
-
+```
 
 Current entry-point roles:
 
@@ -62,7 +59,7 @@ Current entry-point roles:
 
 Note: BWT+MTF leading to out of memory error (File: T.nigroviridis.fna)
 
-`RunBench` currently benchmarks these 5 schemes:
+`RunBench` currently benchmarks these 11 schemes:
 
 | Scheme | Transform path | Entropy coder |
 |---|---|---|
@@ -71,8 +68,14 @@ Note: BWT+MTF leading to out of memory error (File: T.nigroviridis.fna)
 | `LZ77+rANS` | Data -> LZ77 triplets | rANS |
 | `LZSS+Huffman` | Data -> LZSS streams | Huffman |
 | `BWT+MTF+Huffman` | Data -> BWT -> MTF | Huffman |
+| `BWT+MTF+rANS` | Data -> BWT -> MTF | rANS |
+| `BWT+MTF+Arith` | Data -> BWT -> MTF | Arithmetic |
+| `LZ78+rANS` | Data -> LZ78 pairs | rANS |
+| `LZ78+Arith` | Data -> LZ78 pairs | Arithmetic |
+| `LZW+rANS` | Data -> LZW indices | rANS |
+| `LZW+Arith` | Data -> LZW indices | Arithmetic |
 
-Although the codebase still contains arithmetic and rANS support outside this exact matrix, `RunBench` itself currently activates the 5 schemes above.
+Although the codebase still contains algorithmic variations outside this exact matrix, `RunBench` itself currently activates the 11 schemes above.
 
 ## High-Level Architecture
 
@@ -83,6 +86,8 @@ Although the codebase still contains arithmetic and rANS support outside this ex
 | `LZ77` | `delta`, `length`, `next` streams | `WINDOW = 1024`, `LOOKAHEAD = 128` |
 | `LZSS` | identifier bits + `delta`, `length`, `next` streams | `LENGTH_THRESHOLD = 4` |
 | `BWT + MTF` | MTF index stream + stored alphabet | alphabet is saved separately for decode |
+| `LZ78` | `(dictionary_index, character)` pairs | Trie-based tree nodes; O(N) traversal time |
+| `LZW` | encoded index streams | Uses `Long` dictionary keys, native bitwise shift |
 
 ### Entropy Coders
 
@@ -117,7 +122,7 @@ Although the codebase still contains arithmetic and rANS support outside this ex
 
 ## Dataset
 
-The default dataset list used by `Master` and `RunBench` comes from [`FilePaths.java`](/home/arnab/code/collegeCode/sem6/applications/Project-Initial/FilePaths.java) and currently includes:
+The default dataset list used by `Master` and `RunBench` comes from `FilePaths.java` and currently includes:
 
 - `C.elegans.fna`
 - `E.Coli.fna`
@@ -144,12 +149,11 @@ These are a mix of genome files and text/program-source style benchmark files, i
 - [x] Implement rANS and Arithmetic entropy encodings in O(n)
 - [x] Implement LZ78 and LZW
     - [x] LZ78 and LZW need optimization
-        - Before: LZW had String for Dictonary Key and bit handling was manual
-        - After: LZW now uses Long for Dictonary Key and native bitwise shift
-        - Before : LZ78: Time Complexity: O(N^2), Heavy concatenation every where, String keys in HashMap, Nested loops searching matches.
-        - After: LZ78:  Time Complexity: O(N), No string creation during search, Tree nodes with Character maps, Trie traverses character by character.
-- [x] Implement BWT+MTF, LZ78 and LZW varations with rANS and Arithmetic coding, and benchmark it.
+        - Before: LZW had String for Dictionary Key and bit handling was manual.
+        - After: LZW now uses Long for Dictionary Key and native bitwise shift.
+        - Before: LZ78 Time Complexity was O(N^2), with heavy concatenation everywhere, String keys in HashMap, and nested loops searching matches.
+        - After: LZ78 Time Complexity is O(N), with no string creation during search, Tree nodes with Character maps, and Trie traversing character by character.
+- [x] Implement BWT+MTF, LZ78, and LZW variations with rANS and Arithmetic coding, and benchmark it.
 - [ ] Determine at what size is there scope for JVM running out of memory.
     - Refer to the note in instructions on how to run the benchmark.
-    - Note: Failed to run BWT+MTF+Huffman on `T.nigroviridis.fna` with even 6 gb heap.
-
+    - Note: Failed to run BWT+MTF+Huffman on `T.nigroviridis.fna` with even 6 GB heap.
