@@ -8,129 +8,109 @@ public class LZW {
 
     public static byte[] encode(ArrayList<Character> input) {
         if (input == null || input.isEmpty()) return new byte[0];
-        HashMap<String, Integer> dictionary = new HashMap<>();
-        for (int i = 0; i < 256; i++) {
-            dictionary.put(String.valueOf((char) i), i);
-        }
+
+        HashMap<Long, Integer> dictionary = new HashMap<>();
+        for (int i = 0; i < 256; i++) dictionary.put((long) i, i);
+
         int dictSize = 256;
         int bitWidth = 9;
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        int bitBuffer = 0;
-        int bitCount = 0;
-        String current = "";
+        int bitBuffer = 0, bitCount = 0;
+
+        int prefixCode = -1;
         for (char c : input) {
-            String next = current + c;
-            if (dictionary.containsKey(next)) {
-                current = next;
+            long key = (prefixCode == -1) ? (long) c : ((long) prefixCode << 16) | c;
+            if (dictionary.containsKey(key)) {
+                prefixCode = dictionary.get(key);
             } else {
-                int code = dictionary.get(current);
-                bitBuffer = (bitBuffer << bitWidth) | code;
+                bitBuffer = (bitBuffer << bitWidth) | prefixCode;
                 bitCount += bitWidth;
                 while (bitCount >= 8) {
                     bitCount -= 8;
                     out.write((bitBuffer >> bitCount) & 0xFF);
                 }
+
                 if (dictSize < MAX_DICT_SIZE) {
-                    dictionary.put(next, dictSize++);
-                    if (dictSize > (1 << bitWidth) && bitWidth < MAX_BIT_WIDTH) {
-                        bitWidth++;
-                    }
+                    dictionary.put(key, dictSize++);
+                    if (dictSize > (1 << bitWidth) && bitWidth < MAX_BIT_WIDTH) bitWidth++;
                 }
-                current = String.valueOf(c);
+                prefixCode = (int) c;
             }
         }
-        if (!current.isEmpty()) {
-            int code = dictionary.get(current);
-            bitBuffer = (bitBuffer << bitWidth) | code;
+
+        if (prefixCode != -1) {
+            bitBuffer = (bitBuffer << bitWidth) | prefixCode;
             bitCount += bitWidth;
             while (bitCount >= 8) {
                 bitCount -= 8;
                 out.write((bitBuffer >> bitCount) & 0xFF);
             }
         }
-        if (bitCount > 0) {
-            out.write((bitBuffer << (8 - bitCount)) & 0xFF);
-        }
+        if (bitCount > 0) out.write((bitBuffer << (8 - bitCount)) & 0xFF);
         return out.toByteArray();
     }
 
     public static ArrayList<Character> decode(byte[] compressed) {
         if (compressed == null || compressed.length == 0) return new ArrayList<>();
+
         ArrayList<String> dictionary = new ArrayList<>();
-        for (int i = 0; i < 256; i++) {
-            dictionary.add(String.valueOf((char) i));
-        }
-        int dictSize = 256;
-        int bitWidth = 9;
+        for (int i = 0; i < 256; i++) dictionary.add(String.valueOf((char) i));
+
+        int dictSize = 256, bitWidth = 9;
         ArrayList<Character> result = new ArrayList<>();
-        int[] byteIdx = {0};
-        int[] bitBuffer = {0};
-        int[] bitCount = {0};
-        int oldCode = readBits(compressed, byteIdx, bitBuffer, bitCount, bitWidth);
+        int[] state = {0, 0, 0}; // idx, buffer, count
+
+        int oldCode = readBits(compressed, state, bitWidth);
         if (oldCode == -1) return result;
+
         String s = dictionary.get(oldCode);
         for (char c : s.toCharArray()) result.add(c);
+
         while (true) {
-            int newCode = readBits(compressed, byteIdx, bitBuffer, bitCount, bitWidth);
+            int newCode = readBits(compressed, state, bitWidth);
             if (newCode == -1) break;
-            String entry;
-            if (newCode < dictSize) {
-                entry = dictionary.get(newCode);
-            } else if (newCode == dictSize) {
-                entry = s + s.charAt(0);
-            } else {
-                break;
-            }
+
+            String entry = (newCode < dictSize) ? dictionary.get(newCode) : s + s.charAt(0);
             for (char c : entry.toCharArray()) result.add(c);
+
             if (dictSize < MAX_DICT_SIZE) {
                 dictionary.add(s + entry.charAt(0));
                 dictSize++;
-                if ((dictSize - 1) == (1 << bitWidth) - 1 && bitWidth < MAX_BIT_WIDTH) {
-                    bitWidth++;
-                }
+                if ((dictSize - 1) == (1 << bitWidth) - 1 && bitWidth < MAX_BIT_WIDTH) bitWidth++;
             }
             s = entry;
         }
         return result;
     }
-
-    private static int readBits(byte[] data, int[] byteIdx, int[] bitBuffer, int[] bitCount, int bitWidth) {
-        while (bitCount[0] < bitWidth) {
-            if (byteIdx[0] >= data.length) return -1;
-            bitBuffer[0] = (bitBuffer[0] << 8) | (data[byteIdx[0]++] & 0xFF);
-            bitCount[0] += 8;
-        }
-        bitCount[0] -= bitWidth;
-        return (bitBuffer[0] >> bitCount[0]) & ((1 << bitWidth) - 1);
-    }
-
+    
     public static int[] getCodes(ArrayList<Character> input) {
-        HashMap<String, Integer> dictionary = new HashMap<>();
-        for (int i = 0; i < 256; i++) {
-            dictionary.put(String.valueOf((char) i), i);
-        }
+        if (input == null || input.isEmpty()) return new int[0];
+        HashMap<Long, Integer> dictionary = new HashMap<>();
+        for (int i = 0; i < 256; i++) dictionary.put((long) i, i);
         int dictSize = 256;
         ArrayList<Integer> codes = new ArrayList<>();
-        String current = "";
+        int prefixCode = -1;
         for (char c : input) {
-            String next = current + c;
-            if (dictionary.containsKey(next)) {
-                current = next;
+            long key = (prefixCode == -1) ? (long) c : ((long) prefixCode << 16) | c;
+            if (dictionary.containsKey(key)) {
+                prefixCode = dictionary.get(key);
             } else {
-                codes.add(dictionary.get(current));
-                if (dictSize < MAX_DICT_SIZE) {
-                    dictionary.put(next, dictSize++);
-                }
-                current = String.valueOf(c);
+                codes.add(prefixCode);
+                if (dictSize < 4096) dictionary.put(key, dictSize++);
+                prefixCode = (int) c;
             }
         }
-        if (!current.isEmpty()) {
-            codes.add(dictionary.get(current));
+        if (prefixCode != -1) codes.add(prefixCode);
+        return codes.stream().mapToInt(i -> i).toArray();
+    }
+
+    private static int readBits(byte[] data, int[] state, int width) {
+        while (state[2] < width) {
+            if (state[0] >= data.length) return -1;
+            state[1] = (state[1] << 8) | (data[state[0]++] & 0xFF);
+            state[2] += 8;
         }
-        int[] result = new int[codes.size()];
-        for (int i = 0; i < codes.size(); i++) {
-            result[i] = codes.get(i);
-        }
-        return result;
+        state[2] -= width;
+        return (state[1] >> state[2]) & ((1 << width) - 1);
     }
 }

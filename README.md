@@ -136,7 +136,11 @@ These are a mix of genome files and text/program-source style benchmark files, i
 ## TODO
 - [x] Implement rANS and Arithmetic entropy encodings in O(n)
 - [x] Implement LZ78 and LZW
-    - [ ] LZ78 and LZW need optimization
+    - [x] LZ78 and LZW need optimization
+        - Before: LZW had String for Dictonary Key and bit handling was manual
+        - After: LZW now uses Long for Dictonary Key and native bitwise shift
+        - Before : LZ78: Time Complexity: O(N^2), Heavy concatenation every where, String keys in HashMap, Nested loops searching matches.
+        - After: LZ78:  Time Complexity: O(N), No string creation during search, Tree nodes with Character maps, Trie traverses character by character.
 - [x] Implement BWT+MTF, LZ78 and LZW varations with rANS and Arithmetic coding, and benchmark it.
 - [ ] Determine at what size is there scope for JVM running out of memory.
     - Refer to the note in instructions on how to run the benchmark.

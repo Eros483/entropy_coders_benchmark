@@ -1,82 +1,61 @@
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 public class LZ78 {
     private static final int MAX_DICT_SIZE = 4096;
 
+    private static class TrieNode {
+        int index;
+        Map<Character, TrieNode> children = new HashMap<>();
+        TrieNode(int index) { this.index = index; }
+    }
+
     public static LZ78Element encode(ArrayList<Character> msg) {
         ArrayList<Integer> dictIndices = new ArrayList<>();
         ArrayList<Character> nextChars = new ArrayList<>();
-        
-        HashMap<String, Integer> dictionary = new HashMap<>();
-        dictionary.put("", 0);
+        TrieNode root = new TrieNode(0);
         int nextIndex = 1;
-        
+
         int i = 0;
         while (i < msg.size()) {
-            int matchIndex = 0;
+            TrieNode current = root;
             int matchLength = 0;
-            
-            // Find the longest match in the dictionary
-            for (int len = 1; i + len <= msg.size(); len++) {
-                StringBuilder sb = new StringBuilder();
-                for (int k = i; k < i + len; k++) {
-                    sb.append(msg.get(k));
-                }
-                String substr = sb.toString();
-                
-                if (dictionary.containsKey(substr)) {
-                    matchIndex = dictionary.get(substr);
-                    matchLength = len;
+
+            while (i + matchLength < msg.size()) {
+                char c = msg.get(i + matchLength);
+                if (current.children.containsKey(c)) {
+                    current = current.children.get(c);
+                    matchLength++;
                 } else {
-                    if (nextIndex < MAX_DICT_SIZE) {
-                        dictionary.put(substr, nextIndex++);
-                    }
                     break;
                 }
             }
-            
-            dictIndices.add(matchIndex);
-            
-            // Append the next character, or null-terminator if at end
-            if (i + matchLength < msg.size()) {
-                nextChars.add(msg.get(i + matchLength));
-            } else {
-                nextChars.add('\0'); 
+
+            dictIndices.add(current.index);
+            char next = (i + matchLength < msg.size()) ? msg.get(i + matchLength) : '\0';
+            nextChars.add(next);
+
+            if (nextIndex < MAX_DICT_SIZE && next != '\0') {
+                current.children.put(next, new TrieNode(nextIndex++));
             }
-            
-            // Increment pointer by match length + 1 (the new character)
             i += matchLength + 1;
         }
-        
         return new LZ78Element(dictIndices, nextChars);
     }
 
     public static ArrayList<Character> decode(LZ78Element lz78) {
         ArrayList<Character> msg = new ArrayList<>();
         ArrayList<String> dictionary = new ArrayList<>();
-        
         dictionary.add("");
-        
+
         for (int t = 0; t < lz78.dictIndex.size(); t++) {
-            int index = lz78.dictIndex.get(t);
-            char next = lz78.nextChar.get(t);
+            String entry = dictionary.get(lz78.dictIndex.get(t));
+            if (lz78.nextChar.get(t) != '\0') entry += lz78.nextChar.get(t);
             
-            String entry = dictionary.get(index);
-            
-            if (next != '\0') {
-                entry += next;
-            }
-            
-            for (char c : entry.toCharArray()) {
-                msg.add(c);
-            }
-            
-            if (dictionary.size() < MAX_DICT_SIZE) {
-                dictionary.add(entry);
-            }
+            for (char c : entry.toCharArray()) msg.add(c);
+            if (dictionary.size() < MAX_DICT_SIZE) dictionary.add(entry);
         }
-        
         return msg;
     }
 }
