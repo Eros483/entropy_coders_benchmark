@@ -15,8 +15,10 @@ public class RunBench {
 
     private static final String[] ALL_SCHEMES = {
         "LZ77+Huffman", "LZ77+Arith", "LZ77+rANS",
-        "LZSS+Huffman",
-        "BWT+MTF+Huffman"
+        "LZSS+Huffman", "BWT+MTF+Huffman",
+        "BWT+MTF+rANS", "BWT+MTF+Arith", 
+        "LZ78+rANS", "LZ78+Arith",
+        "LZW+rANS", "LZW+Arith"
     };
     private static final int N = ALL_SCHEMES.length;
 
@@ -294,6 +296,66 @@ public class RunBench {
                 IOHelper.writeAlphabet(mt.alphabet, h);
                 compBytes = io(h + FilePaths.HUFFMAN_MAP_EXTENSION) + io(h + FilePaths.HUFFMAN_ENCODING_EXTENSION)
                           + io(h + FilePaths.ALPHABET_EXTENSION);
+                break;
+            }
+            case 5: { // BWT+MTF+rANS
+                data = IOHelper.readFile(path);
+                String od = outDir(FilePaths.BWT_COMPRESSED_DIRECTORY + "bench_rans/");
+                String h = od + base;
+                MTFElement mt = MTF.encode(BWT.encode(data));
+                rANSIOHelper.write(rANS.encode(toInt(mt.mtf)), h + ".rans");
+                IOHelper.writeAlphabet(mt.alphabet, h);
+                compBytes = io(h + ".rans") + io(h + FilePaths.ALPHABET_EXTENSION);
+                break;
+            }
+            case 6: { // BWT+MTF+Arith
+                data = IOHelper.readFile(path);
+                String od = outDir(FilePaths.BWT_COMPRESSED_DIRECTORY + "bench_ar/");
+                String h = od + base;
+                MTFElement mt = MTF.encode(BWT.encode(data));
+                ArithmeticIOHelper.write(Arithmetic.encode(toInt(mt.mtf)), h + ".ar");
+                IOHelper.writeAlphabet(mt.alphabet, h);
+                compBytes = io(h + ".ar") + io(h + FilePaths.ALPHABET_EXTENSION);
+                break;
+            }
+            case 7: { // LZ78+rANS
+                data = IOHelper.readFile(path);
+                String od = outDir(FilePaths.OUTPUT_DIRECTORY + "LZ78/bench_rans/");
+                String idxPath = od + base + ".rans.idx";
+                String charPath = od + base + ".rans.char";
+                LZ78Element lz78 = LZ78.encode(data);
+                rANSIOHelper.write(rANS.encode(toInt(lz78.dictIndex)), idxPath);
+                rANSIOHelper.write(rANS.encode(toInt(HelperFunctions.charsToInts(lz78.nextChar))), charPath);
+                compBytes = io(idxPath) + io(charPath);
+                break;
+            }
+            case 8: { // LZ78+Arith
+                data = IOHelper.readFile(path);
+                String od = outDir(FilePaths.OUTPUT_DIRECTORY + "LZ78/bench_ar/");
+                String idxPath = od + base + ".ar.idx";
+                String charPath = od + base + ".ar.char";
+                LZ78Element lz78 = LZ78.encode(data);
+                ArithmeticIOHelper.write(Arithmetic.encode(toInt(lz78.dictIndex)), idxPath);
+                ArithmeticIOHelper.write(Arithmetic.encode(toInt(HelperFunctions.charsToInts(lz78.nextChar))), charPath);
+                compBytes = io(idxPath) + io(charPath);
+                break;
+            }
+            case 9: { // LZW+rANS
+                data = IOHelper.readFile(path);
+                String od = outDir(FilePaths.OUTPUT_DIRECTORY + "LZW/bench_rans/");
+                String outPath = od + base + ".rans";
+                int[] codes = LZW.getCodes(data);
+                rANSIOHelper.write(rANS.encode(codes), outPath);
+                compBytes = io(outPath);
+                break;
+            }
+            case 10: { // LZW+Arith
+                data = IOHelper.readFile(path);
+                String od = outDir(FilePaths.OUTPUT_DIRECTORY + "LZW/bench_ar/");
+                String outPath = od + base + ".ar";
+                int[] codes = LZW.getCodes(data);
+                ArithmeticIOHelper.write(Arithmetic.encode(codes), outPath);
+                compBytes = io(outPath);
                 break;
             }
             default: throw new IllegalStateException("Unknown scheme index: " + idx);
