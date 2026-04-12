@@ -1,6 +1,6 @@
 public final class FilePaths {
 
-	public static final String DATA_DIRECTORY = "Data/";
+	public static final String DATA_DIRECTORY = "";
 	public static final String OUTPUT_DIRECTORY = DATA_DIRECTORY + "OutputJava/";
 	public static final String HUFFMAN_IO_TEST = DATA_DIRECTORY + "testHuffmanIO";
 	public static final String BWT_COMPRESSED_DIRECTORY = OUTPUT_DIRECTORY + "BWT/";

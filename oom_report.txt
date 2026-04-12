@@ -1,0 +1,185 @@
+OOM Memory Threshold Report
+============================
+
+Testing scheme: BWT+MTF+Huffman
+-----------------------------
+  oom_report.txt : OK
+  bench_quick.txt : OK
+  tiny.txt : OK
+  medium.txt : OK
+  xargs.1 : OK
+  fields.c : OK
+  cp.html : OK
+  asyoulik.txt : OK
+  aliceinwonderland.txt : OK
+  alice29.txt : OK
+  lcet10.txt : OK
+  plrabn12.txt : OK
+  H.pylori.fna : OK
+  L.monocytogenes.fna : OK
+  bible.txt : OK
+  E.Coli.fna : OK
+  S.cerevisiae.fna : OK
+  N.crassa.fna : OK
+  C.elegans.fna : OK
+  T.nigroviridis.fna : OOM
+
+  => Last successful file : C.elegans.fna
+  => First OOM file       : T.nigroviridis.fna
+
+Testing scheme: BWT+MTF+rANS
+-----------------------------
+  oom_report.txt : OK
+  bench_quick.txt : OK
+  tiny.txt : OK
+  medium.txt : OK
+  xargs.1 : OK
+  fields.c : OK
+  cp.html : OK
+  asyoulik.txt : OK
+  aliceinwonderland.txt : OK
+  alice29.txt : OK
+  lcet10.txt : OK
+  plrabn12.txt : OK
+  H.pylori.fna : OK
+  L.monocytogenes.fna : OK
+  bible.txt : OK
+  E.Coli.fna : OK
+  S.cerevisiae.fna : OK
+  N.crassa.fna : OK
+  C.elegans.fna : OK
+  T.nigroviridis.fna : OOM
+
+  => Last successful file : C.elegans.fna
+  => First OOM file       : T.nigroviridis.fna
+
+Testing scheme: BWT+MTF+Arith
+-----------------------------
+  oom_report.txt : OK
+  bench_quick.txt : OK
+  tiny.txt : OK
+  medium.txt : OK
+  xargs.1 : OK
+  fields.c : OK
+  cp.html : OK
+  asyoulik.txt : OK
+  aliceinwonderland.txt : OK
+  alice29.txt : OK
+  lcet10.txt : OK
+  plrabn12.txt : OK
+  H.pylori.fna : OK
+  L.monocytogenes.fna : OK
+  bible.txt : OK
+  E.Coli.fna : OK
+  S.cerevisiae.fna : OK
+  N.crassa.fna : OK
+  C.elegans.fna : OK
+  T.nigroviridis.fna : OOM
+
+  => Last successful file : C.elegans.fna
+  => First OOM file       : T.nigroviridis.fna
+
+Testing scheme: LZ78+rANS
+-----------------------------
+  oom_report.txt : OK
+  bench_quick.txt : OK
+  tiny.txt : OK
+  medium.txt : OK
+  xargs.1 : OK
+  fields.c : OK
+  cp.html : OK
+  asyoulik.txt : OK
+  aliceinwonderland.txt : OK
+  alice29.txt : OK
+  lcet10.txt : OK
+  plrabn12.txt : OK
+  H.pylori.fna : OK
+  L.monocytogenes.fna : OK
+  bible.txt : OK
+  E.Coli.fna : OK
+  S.cerevisiae.fna : OK
+  N.crassa.fna : OK
+  C.elegans.fna : OK
+  T.nigroviridis.fna : OK
+
+  => Last successful file : T.nigroviridis.fna
+  => First OOM file       : none
+
+Testing scheme: LZ78+Arith
+-----------------------------
+  oom_report.txt : OK
+  bench_quick.txt : OK
+  tiny.txt : OK
+  medium.txt : OK
+  xargs.1 : OK
+  fields.c : OK
+  cp.html : OK
+  asyoulik.txt : OK
+  aliceinwonderland.txt : OK
+  alice29.txt : OK
+  lcet10.txt : OK
+  plrabn12.txt : OK
+  H.pylori.fna : OK
+  L.monocytogenes.fna : OK
+  bible.txt : OK
+  E.Coli.fna : OK
+  S.cerevisiae.fna : OK
+  N.crassa.fna : OK
+  C.elegans.fna : OK
+  T.nigroviridis.fna : OK
+
+  => Last successful file : T.nigroviridis.fna
+  => First OOM file       : none
+
+Testing scheme: LZW+rANS
+-----------------------------
+  oom_report.txt : OK
+  bench_quick.txt : OK
+  tiny.txt : OK
+  medium.txt : OK
+  xargs.1 : OK
+  fields.c : OK
+  cp.html : OK
+  asyoulik.txt : OK
+  aliceinwonderland.txt : OK
+  alice29.txt : OK
+  lcet10.txt : OK
+  plrabn12.txt : OK
+  H.pylori.fna : OK
+  L.monocytogenes.fna : OK
+  bible.txt : OK
+  E.Coli.fna : OK
+  S.cerevisiae.fna : OK
+  N.crassa.fna : OK
+  C.elegans.fna : OK
+  T.nigroviridis.fna : OK
+
+  => Last successful file : T.nigroviridis.fna
+  => First OOM file       : none
+
+Testing scheme: LZW+Arith
+-----------------------------
+  oom_report.txt : OK
+  bench_quick.txt : OK
+  tiny.txt : OK
+  medium.txt : OK
+  xargs.1 : OK
+  fields.c : OK
+  cp.html : OK
+  asyoulik.txt : OK
+  aliceinwonderland.txt : OK
+  alice29.txt : OK
+  lcet10.txt : OK
+  plrabn12.txt : OK
+  H.pylori.fna : OK
+  L.monocytogenes.fna : OK
+  bible.txt : OK
+  E.Coli.fna : OK
+  S.cerevisiae.fna : OK
+  N.crassa.fna : OK
+  C.elegans.fna : OK
+  T.nigroviridis.fna : OK
+
+  => Last successful file : T.nigroviridis.fna
+  => First OOM file       : none
+
