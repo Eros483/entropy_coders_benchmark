@@ -1,4 +1,6 @@
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -288,34 +290,55 @@ public class RunBench {
                 break;
             }
             case 4: { // BWT+MTF+Huffman
-                data = IOHelper.readFile(path);
                 String od = outDir(FilePaths.BWT_COMPRESSED_DIRECTORY + "bench/");
                 String h = od + base;
-                MTFElement mt = MTF.encode(BWT.encode(data));
+                data = IOHelper.readFile(path);
+                File bwtTemp = BWT.encodeChunkedToFile(data);
+                ArrayList<Character> bwtData = new ArrayList<>();
+                try (BufferedReader r = new BufferedReader(new FileReader(bwtTemp))) {
+                    int c;
+                    while ((c = r.read()) != -1) bwtData.add((char) c);
+                }
+                MTFElement mt = MTF.encode(bwtData);
                 HuffmanIOHelper.writeHuffman(Huffman.encode(mt.mtf), h);
                 IOHelper.writeAlphabet(mt.alphabet, h);
                 compBytes = io(h + FilePaths.HUFFMAN_MAP_EXTENSION) + io(h + FilePaths.HUFFMAN_ENCODING_EXTENSION)
-                          + io(h + FilePaths.ALPHABET_EXTENSION);
+                        + io(h + FilePaths.ALPHABET_EXTENSION);
+                bwtTemp.delete();
                 break;
             }
             case 5: { // BWT+MTF+rANS
-                data = IOHelper.readFile(path);
                 String od = outDir(FilePaths.BWT_COMPRESSED_DIRECTORY + "bench_rans/");
                 String h = od + base;
-                MTFElement mt = MTF.encode(BWT.encode(data));
+                data = IOHelper.readFile(path);
+                File bwtTemp = BWT.encodeChunkedToFile(data);
+                ArrayList<Character> bwtData = new ArrayList<>();
+                try (BufferedReader r = new BufferedReader(new FileReader(bwtTemp))) {
+                    int c;
+                    while ((c = r.read()) != -1) bwtData.add((char) c);
+                }
+                MTFElement mt = MTF.encode(bwtData);
                 rANSIOHelper.write(rANS.encode(toInt(mt.mtf)), h + ".rans");
                 IOHelper.writeAlphabet(mt.alphabet, h);
                 compBytes = io(h + ".rans") + io(h + FilePaths.ALPHABET_EXTENSION);
+                bwtTemp.delete();
                 break;
             }
             case 6: { // BWT+MTF+Arith
-                data = IOHelper.readFile(path);
                 String od = outDir(FilePaths.BWT_COMPRESSED_DIRECTORY + "bench_ar/");
                 String h = od + base;
-                MTFElement mt = MTF.encode(BWT.encode(data));
+                data = IOHelper.readFile(path);
+                File bwtTemp = BWT.encodeChunkedToFile(data);
+                ArrayList<Character> bwtData = new ArrayList<>();
+                try (BufferedReader r = new BufferedReader(new FileReader(bwtTemp))) {
+                    int c;
+                    while ((c = r.read()) != -1) bwtData.add((char) c);
+                }
+                MTFElement mt = MTF.encode(bwtData);
                 ArithmeticIOHelper.write(Arithmetic.encode(toInt(mt.mtf)), h + ".ar");
                 IOHelper.writeAlphabet(mt.alphabet, h);
                 compBytes = io(h + ".ar") + io(h + FilePaths.ALPHABET_EXTENSION);
+                bwtTemp.delete();
                 break;
             }
             case 7: { // LZ78+rANS
