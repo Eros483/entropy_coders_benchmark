@@ -1,4 +1,22 @@
-## How The Pipelines Work
+## Report
+
+### Introduction
+It is mathematically provable that huffman entropy encoding, is considerably far from shannon's entropy bound.
+
+Arithmetic encoding, and rANS entropy encoding, however achieve that exact entropy bound, and thus are significantly more efficient at compressing, than huffman entropy encoding.
+
+The objective, was to build a tool to benchmark these entropy encoding algorithms on top of existing SOTA compression algorithms, and determine if this hypothesis is backed by actual computational results.
+
+### Results
+From the entropy encoders, rANS is by far the most efficient.
+
+rANS and arithmetic encodings are significantly better at compression than huffman encoders, and rANS is significantly faster than arithmetic encoding.
+
+#### Best compression ratio
+- `BWT+MTF+rANS` is by far the best, and in specific `BWT+MTF` variants, all outperform `LZ` family variations.
+
+#### Fastest memory-efficiency compression
+- `LZ78+rANS` is the fastest, while `BWT+MTF` variants are by far, the worst. This holds true for memory efficiency as well.
 
 ### Transform Layer
 
