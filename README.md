@@ -4,9 +4,20 @@
 
 This project benchmarks multiple lossless compression pipelines written in plain Java. The transform layer uses `LZ77`, `LZSS`, `BWT + MTF`, `LZ78`, and `LZW`, and the entropy layer uses `Huffman`, `Arithmetic`, and `rANS`.
 
-Refer to `docs/doc.MD` for further information on classes.
-
 No build tool or external dependencies are required. The project compiles with `javac`.
+
+## Directory Structure
+```
+Entropy encoders Benchmark
+├── artifacts        # contains graphs to highlight relations between algorithms
+├── benchmark        # code for base tests
+├── bin              # java compiled classes
+├── Data             # all dataset files
+├── docs             # cleaned benchmark results and documentation on how benchmark works
+├── raw              # raw terminal output from benchmark
+└── src              # contains all primary algorithm files
+```
+
 
 ## Data Setup
 
