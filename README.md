@@ -146,14 +146,8 @@ The default dataset list used by `Master` and `RunBench` comes from `FilePaths.j
 These are a mix of genome files and text/program-source style benchmark files, including Canterbury-style additions such as `alice29.txt`, `asyoulik.txt`, `cp.html`, `fields.c`, `lcet10.txt`, `plrabn12.txt`, and `xargs.1`.
 
 ## TODO
-- [x] Implement rANS and Arithmetic entropy encodings in O(n)
-- [x] Implement LZ78 and LZW
-    - [x] LZ78 and LZW need optimization
-        - Before: LZW had String for Dictionary Key and bit handling was manual.
-        - After: LZW now uses Long for Dictionary Key and native bitwise shift.
-        - Before: LZ78 Time Complexity was O(N^2), with heavy concatenation everywhere, String keys in HashMap, and nested loops searching matches.
-        - After: LZ78 Time Complexity is O(N), with no string creation during search, Tree nodes with Character maps, and Trie traversing character by character.
-- [x] Implement BWT+MTF, LZ78, and LZW variations with rANS and Arithmetic coding, and benchmark it.
-- [ ] Determine at what size is there scope for JVM running out of memory.
-    - Refer to the note in instructions on how to run the benchmark.
-    - Note: Failed to run BWT+MTF+Huffman on `T.nigroviridis.fna` with even 6 GB heap.
+- Implement the objectives instructed in class.
+    - [ ] Add verification for compression
+    - [ ] Measure peak memory consumption
+    - [ ] Fix up documentation and the readme
+        - [ ] documentation should have everything needed for the report
