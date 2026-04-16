@@ -2,150 +2,58 @@
 
 ## Project Overview
 
-This project benchmarks multiple lossless compression pipelines written in plain Java. The transform layer uses `LZ77`, `LZSS`, `BWT + MTF`, `LZ78`, and `LZW`, and the entropy layer uses `Huffman`, `Arithmetic`, and `rANS` where supported.
-
-The codebase is focused on:
-
-- round-trip correctness
-- comparing compressed size across schemes
-- running the same pipelines across a mixed text and genome dataset
+This project benchmarks multiple lossless compression pipelines written in plain Java. The transform layer uses `LZ77`, `LZSS`, `BWT + MTF`, `LZ78`, and `LZW`, and the entropy layer uses `Huffman`, `Arithmetic`, and `rANS`.
 
 No build tool or external dependencies are required. The project compiles with `javac`.
 
+## Data Setup
+
+Download the data folder from [Google Drive](https://drive.google.com/file/d/1Atd143ZsA6HaBL1MPAJuAJvgYFYET0Jo/view) and extract it so that the `Data/` directory is in the project root.
+
 ## Compilation And Execution
 
-## Download Data Folder: [Google Drive](https://drive.google.com/file/d/1Atd143ZsA6HaBL1MPAJuAJvgYFYET0Jo/view)
+### Compilation
 
-- Compilation
 ```bash
 javac -d bin *.java
 ```
 
-- Basic Tests
+### Basic Tests
+
 ```bash
 java -cp bin Test
 java -cp bin TestRANS
 ```
 
-- Running the benchmark
+### Running the Benchmark
+
 ```bash
+java -cp bin RunBench # takes upto an hour to finish testing all files.
+```
+
+#### Benchmark Arguments
+
+The benchmark supports filtering by files and schemes:
+
+```bash
+# All schemes, all Data/ files
 java -cp bin RunBench
+
+# All schemes, specific files
+java -cp bin RunBench --files tiny.txt,L.monocytogenes.fna
+
+# Specific schemes on all files
+java -cp bin RunBench --schemes LZ77+rANS,LZ77+Arith
+
+# Specific schemes on specific file
+java -cp bin RunBench --schemes LZ78+rANS,LZW+Arith --files bible.txt
 ```
-
-- Arguments for running the benchmark with more specifications
-```bash
-# Unified benchmark: LZ77, LZSS, BWT/MTF, LZ78, LZW x Huffman / Arithmetic / rANS
-
-java -cp bin RunBench                                                   # all schemes, all Data/ files
-java -cp bin RunBench --files tiny.txt,L.monocytogenes.fna              # all schemes, specific files
-java -cp bin RunBench --schemes LZ77+rANS,LZ77+Arith                    # LZ77+rANS and LZ77+Arith, all files
-java -cp bin RunBench --schemes LZ78+rANS,LZW+Arith --files bible.txt   # two schemes on one file
-```
-
-- **Note**:
-JVM may run into OOM on java heap space on `T.nigroviridis.fna`. Use the following command to circumvent it:
-```bash
-java -Xmx6g -cp bin RunBench --schemes LZSS+Huffman,BWT+MTF+Huffman --files T.nigroviridis.fna
-```
-
-Current entry-point roles:
-
-- `Test` runs correctness checks for the core algorithms and then runs the Huffman-based `Master` pipelines over the default dataset.
-- `TestRANS` runs standalone rANS unit tests plus an `LZ77 + rANS` pipeline test.
-- `RunBench` is the main benchmark driver.
-- `Benchmark` and `BenchmarkArithmetic` still compile, but they are legacy runners now.
-
-## Active Benchmark Matrix
-
-Note: BWT+MTF leading to out of memory error (File: T.nigroviridis.fna)
-
-`RunBench` currently benchmarks these 11 schemes:
-
-| Scheme | Transform path | Entropy coder |
-|---|---|---|
-| `LZ77+Huffman` | Data -> LZ77 triplets | Huffman |
-| `LZ77+Arith` | Data -> LZ77 triplets | Arithmetic |
-| `LZ77+rANS` | Data -> LZ77 triplets | rANS |
-| `LZSS+Huffman` | Data -> LZSS streams | Huffman |
-| `BWT+MTF+Huffman` | Data -> BWT -> MTF | Huffman |
-| `BWT+MTF+rANS` | Data -> BWT -> MTF | rANS |
-| `BWT+MTF+Arith` | Data -> BWT -> MTF | Arithmetic |
-| `LZ78+rANS` | Data -> LZ78 pairs | rANS |
-| `LZ78+Arith` | Data -> LZ78 pairs | Arithmetic |
-| `LZW+rANS` | Data -> LZW indices | rANS |
-| `LZW+Arith` | Data -> LZW indices | Arithmetic |
-
-Although the codebase still contains algorithmic variations outside this exact matrix, `RunBench` itself currently activates the 11 schemes above.
-
-## High-Level Architecture
-
-### Pipelines
-
-| Pipeline | Output representation | Notes |
-|---|---|---|
-| `LZ77` | `delta`, `length`, `next` streams | `WINDOW = 1024`, `LOOKAHEAD = 128` |
-| `LZSS` | identifier bits + `delta`, `length`, `next` streams | `LENGTH_THRESHOLD = 4` |
-| `BWT + MTF` | MTF index stream + stored alphabet | alphabet is saved separately for decode |
-| `LZ78` | `(dictionary_index, character)` pairs | Trie-based tree nodes; O(N) traversal time |
-| `LZW` | encoded index streams | Uses `Long` dictionary keys, native bitwise shift |
-
-### Entropy Coders
-
-| Coder | Input type | On-disk format | Notes |
-|---|---|---|---|
-| `Huffman` | `ArrayList<Integer>` | `.huffman.encoding` + `.huffman.map` | tree-based variable-length coding |
-| `Arithmetic` | `int[]` | single `.ar`-style binary blob via `ArithmeticIOHelper` | 16-bit Witten-Neal-Cleary style coder |
-| `rANS` | `int[]` | single `.rans`-style binary blob via `rANSIOHelper` | 64-bit state with byte renormalization |
-
-### Important Support Files
-
-| File | Purpose |
-|---|---|
-| `FilePaths.java` | central path constants, file lists, and extensions |
-| `IOHelper.java` | raw file, byte, map, alphabet, and size I/O |
-| `HelperFunctions.java` | conversions, alphabet helpers, and equality checking |
-| `BitPacker.java` | packs and unpacks identifier bitstrings |
-| `ArithmeticIOHelper.java` | serialization for `ArithmeticElement` |
-| `rANSIOHelper.java` | serialization for `rANSElement` |
-| `SuffixArray.java` | suffix-array support for BWT |
-
-## Entry Points
-
-| Class | Role |
-|---|---|
-| `Test` | unit tests for Huffman, suffix arrays, bit packing, LZ77, LZSS, BWT, and MTF, followed by full Huffman pipeline tests through `Master` |
-| `TestRANS` | standalone rANS unit tests and an `LZ77 + rANS` end-to-end round trip |
-| `Master` | runs compress + expand for `LZ77`, `LZSS`, and `BWT + MTF`, all with Huffman |
-| `RunBench` | primary benchmark runner with `--files` and `--schemes` filtering |
-| `Benchmark` | older benchmark runner kept for comparison / backup |
-| `BenchmarkArithmetic` | older wider benchmark runner kept for comparison / backup |
 
 ## Dataset
 
-The default dataset list used by `Master` and `RunBench` comes from `FilePaths.java` and currently includes:
-
-- `C.elegans.fna`
-- `E.Coli.fna`
-- `H.pylori.fna`
-- `lcet10.txt`
-- `L.monocytogenes.fna`
-- `N.crassa.fna`
-- `S.cerevisiae.fna`
-- `T.nigroviridis.fna`
-- `alice29.txt`
-- `aliceinwonderland.txt`
-- `asyoulik.txt`
-- `bible.txt`
-- `cp.html`
-- `medium.txt`
-- `tiny.txt`
-- `xargs.1`
-- `fields.c`
-- `plrabn12.txt`
-
-These are a mix of genome files and text/program-source style benchmark files, including Canterbury-style additions such as `alice29.txt`, `asyoulik.txt`, `cp.html`, `fields.c`, `lcet10.txt`, `plrabn12.txt`, and `xargs.1`.
-
+The project includes 17 test files, including genome files and usual text documents, chosen from the `Canterbury corpus`.
 ## TODO
+
 - Implement the objectives instructed in class.
     - [ ] Add verification for compression
     - [ ] Measure peak memory consumption
