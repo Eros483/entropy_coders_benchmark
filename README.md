@@ -15,20 +15,25 @@ Download the data folder from [Google Drive](https://drive.google.com/file/d/1At
 ### Compilation
 
 ```bash
-javac -d bin *.java
+# Compile all packages in order (core -> compress -> benchmark -> RunBench)
+mkdir -p bin
+javac -d bin src/core/*.java
+javac -d bin -cp bin src/compress/*.java
+javac -d bin -cp bin benchmark/*.java
+javac -d bin -cp bin RunBench.java
 ```
 
 ### Basic Tests
 
 ```bash
-java -cp bin Test
-java -cp bin TestRANS
+java -cp bin benchmark.Test
+java -cp bin benchmark.TestRANS
 ```
 
 ### Running the Benchmark
 
 ```bash
-java -cp bin RunBench # takes upto an hour to finish testing all files.
+java -cp bin RunBench
 ```
 
 #### Benchmark Arguments

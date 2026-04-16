@@ -4,3 +4,4 @@ bin/
 .codex
 *.zip
 AGENTS.md
+.vscode/

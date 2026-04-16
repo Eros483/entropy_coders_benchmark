@@ -1,5 +1,10 @@
+package compress;
+
 import java.io.IOException;
 import java.util.HashMap;
+
+import core.BitPacker;
+import core.HuffmanElement;
 
 public class HuffmanIOHelper {
 

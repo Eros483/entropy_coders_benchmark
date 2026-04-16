@@ -1,6 +1,11 @@
+package benchmark;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+
+import core.*;
+import compress.*;
 
 /**
  * Standalone test suite for rANS encoding and the LZ77+rANS pipeline.

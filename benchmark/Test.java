@@ -1,7 +1,12 @@
+package benchmark;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+
+import core.*;
+import compress.*;
 
 public class Test {
 

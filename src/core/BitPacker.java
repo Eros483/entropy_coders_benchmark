@@ -1,3 +1,5 @@
+package core;
+
 import java.lang.Math;
 
 public class BitPacker {

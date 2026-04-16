@@ -1,3 +1,5 @@
+package core;
+
 /**
  * Data carrier for arithmetic coding results.
  */

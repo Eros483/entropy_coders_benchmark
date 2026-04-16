@@ -1,3 +1,5 @@
+package compress;
+
 public final class FilePaths {
 
 	public static final String DATA_DIRECTORY = "Data/";

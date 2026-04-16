@@ -1,4 +1,9 @@
+package benchmark;
+
 import java.util.ArrayList;
+
+import core.*;
+import compress.*;
 
 public class Master {
 

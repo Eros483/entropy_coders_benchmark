@@ -1,15 +1,19 @@
+package compress;
+
 import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Scanner;
 
+import core.*;
+
 public class IOHelper {
 
 	/**
 	 * Reads the data. Appends EOF '\0' at the end.
 	 */
-	static ArrayList<Character> readFile(String filePath) throws IOException {
+	public static ArrayList<Character> readFile(String filePath) throws IOException {
 		BufferedReader fileReader = new BufferedReader(new FileReader(filePath));
 		int val = 0;
 		ArrayList<Character> content = new ArrayList<>();

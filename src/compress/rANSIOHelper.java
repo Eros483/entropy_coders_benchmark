@@ -1,8 +1,12 @@
+package compress;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+
+import core.rANSElement;
 
 /** Binary serialization for rANSElement. */
 public class rANSIOHelper {

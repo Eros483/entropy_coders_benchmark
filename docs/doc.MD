@@ -42,7 +42,7 @@ Each transform can be paired with any entropy coder (though some combinations ar
 
 ## Program Structure
 
-### Core Classes
+### Core Classes (`src/core/`)
 
 | Class | Purpose |
 |-------|---------|
@@ -56,26 +56,24 @@ Each transform can be paired with any entropy coder (though some combinations ar
 | `Arithmetic.java` | Arithmetic coding |
 | `rANS.java` | Range ANS coding |
 
-### Support Classes
+### Support Classes (`src/compress/`)
 
 | Class | Purpose |
 |-------|---------|
 | `FilePaths.java` | Central path constants, file lists, extensions |
 | `IOHelper.java` | Raw file, byte, map, alphabet I/O |
-| `HelperFunctions.java` | Conversions, alphabet helpers |
-| `BitPacker.java` | Packs/unpacks identifier bitstrings |
+| `HelperFunctions.java` (core) | Conversions, alphabet helpers |
+| `BitPacker.java` (core) | Packs/unpacks identifier bitstrings |
 | `ArithmeticIOHelper.java` | Serialization for ArithmeticElement |
 | `rANSIOHelper.java` | Serialization for rANSElement |
 | `HuffmanIOHelper.java` | Serialization for HuffmanElement |
-| `SuffixArray.java` | Suffix array for BWT |
+| `SuffixArray.java` (core) | Suffix array for BWT |
 
 ### Entry Points
 
 | Class | Role |
 |-------|------|
-| `Test` | Unit tests for Huffman, suffix arrays, bit packing, LZ77, LZSS, BWT, MTF; then full Huffman pipeline tests |
-| `TestRANS` | Standalone rANS unit tests + LZ77+rANS round trip |
-| `Master` | Runs compress+expand for LZ77, LZSS, BWT+MTF with Huffman |
+| `benchmark/Test` | Unit tests for Huffman, suffix arrays, bit packing, LZ77, LZSS, BWT, MTF; then full Huffman pipeline tests |
+| `benchmark/TestRANS` | Standalone rANS unit tests + LZ77+rANS round trip |
+| `benchmark/Master` | Runs compress+expand for LZ77, LZSS, BWT+MTF with Huffman |
 | `RunBench` | Primary benchmark driver with --files and --schemes filtering |
-| `Benchmark` | Legacy benchmark (kept for comparison) |
-| `BenchmarkArithmetic` | Legacy wider benchmark (kept for comparison) |

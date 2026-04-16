@@ -1,17 +1,22 @@
+package core;
+
 import java.util.ArrayList;
 
-public class LZ77 {
+public class LZSS {
 
     private static final int LOOKAHEAD_BUFFER = 128;
     private static final int WINDOW = 1024;
+    private static final int LENGTH_THRESHOLD = 4;
 
-    public static LZ77Element encode(ArrayList<Character> msg) {
+    public static LZSSElement encode(ArrayList<Character> msg) {
+        // add identifier column
+        StringBuilder identifier = new StringBuilder();
         ArrayList<Integer> deltas = new ArrayList<>();
         ArrayList<Integer> lengths = new ArrayList<>();
         ArrayList<Character> nextChars = new ArrayList<>();
 
-        deltas.add(0);
-        lengths.add(0);
+        // first index is always a character
+        identifier.append(0);
         nextChars.add(msg.get(0));
 
         int c = 1; // current position in message
@@ -38,28 +43,43 @@ public class LZ77 {
                     length++;
             }
 
-            // add triplet
-            deltas.add(delta);
-            lengths.add(length);
-            nextChars.add(msg.get(c + length));
+            // add entry according to LZSS logic
+            if(length > LENGTH_THRESHOLD)
+            {
+              identifier.append(1);
+              deltas.add(delta);
+              lengths.add(length);
+              nextChars.add(msg.get(c + length));
+            }
+            else
+            {
+              for(int j = 0; j <= length; j++)
+              {
+                identifier.append(0);
+                nextChars.add(msg.get(c+j));
+              }
+            }
 
             // jump to next unmatched character
             c += 1 + length;
         }
-        return new LZ77Element(deltas, lengths, nextChars);
+        return new LZSSElement(identifier.toString(), deltas, lengths, nextChars);
     }
 
-    public static ArrayList<Character> decode(LZ77Element lz77) {
+    public static ArrayList<Character> decode(LZSSElement lzss) {
         ArrayList<Character> msg = new ArrayList<>();
-        int numTriplets = lz77.length.size();
-        for (int t = 0; t < numTriplets; t++) {
-            int length = lz77.length.get(t);
-            for (int j = 1; j <= length; j++) {
-                // starting from delta characters behind, append length many characters from the decoded message
-                char c = msg.get(msg.size() - lz77.delta.get(t));
-                msg.add(c);
+        int numIdentifiers = lzss.identifier.length();
+        int d = 0;
+        for (int t = 0; t < numIdentifiers; t++) {
+            if (lzss.identifier.charAt(t) == '1')
+            {
+              for (int j = 0; j < lzss.length.get(d); j++)
+              {
+                msg.add(msg.get(msg.size()-lzss.delta.get(d)));
+              }
+              d++;
             }
-            msg.add(lz77.next.get(t));
+            msg.add(lzss.next.get(t));
         }
         return msg;
     }

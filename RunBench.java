@@ -4,6 +4,9 @@ import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import core.*;
+import compress.*;
+
 /**
  * Unified benchmark: LZ77, LZSS, BWT/MTF x Huffman / Arithmetic / rANS.
  *
