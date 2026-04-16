@@ -28,7 +28,7 @@ public class RunBench {
     private static final int N = ALL_SCHEMES.length;
 
     private static record Result(String file, long origBytes, long compBytes,
-                                  double ratio, double bpp, double timeSec) {}
+                                  double ratio, double bpp, double timeSec, long peakMemoryMB) {}
 
     /* -------- arg parsing -------- */
 
@@ -217,13 +217,13 @@ public class RunBench {
 
     private static void printTable(String base, long orig, String[] names, Result[] results) {
         System.out.println();
-        System.out.printf("  \u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n");
-        System.out.printf("  \u2502 Scheme               \u2502 Orig     \u2502 Compressed\u2502 Ratio \u2502 bpp      \u2502 Time (s)\u2502\n");
+        System.out.printf("  \u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n");
+        System.out.printf("  \u2502 Scheme               \u2502 Orig     \u2502 Compressed\u2502 Ratio \u2502 bpp      \u2502 Time (s)\u2502 Memory (MB)\u2502\n");
         System.out.printf("  \u251C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n");
         for (int i = 0; i < results.length; i++) {
             Result rr = results[i];
-            System.out.printf("  \u2502 %-22s \u2502 %8d \u2502 %8d \u2502 %5.2fx \u2502 %5.2f   \u2502  %6.2fs \u2502\n",
-                names[i], rr.origBytes, rr.compBytes, rr.ratio, rr.bpp, rr.timeSec);
+            System.out.printf("  \u2502 %-22s \u2502 %8d \u2502 %8d \u2502 %5.2fx \u2502 %5.2f   \u2502  %6.2fs \u2502  %8d MB \u2502\n",
+                names[i], rr.origBytes, rr.compBytes, rr.ratio, rr.bpp, rr.timeSec, rr.peakMemoryMB);
         }
         System.out.printf("  \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n");
     }
@@ -232,6 +232,9 @@ public class RunBench {
 
     @SuppressWarnings("unchecked")
     private static Result runScheme(String path, String base, long origBytes, int idx) throws Exception {
+        Runtime runtime = Runtime.getRuntime();
+        runtime.gc();
+        long beforeMem = runtime.totalMemory() - runtime.freeMemory();
         long t0 = System.currentTimeMillis();
         ArrayList<Character> data;
         long compBytes;
@@ -388,10 +391,12 @@ public class RunBench {
         }
 
         double sec = (System.currentTimeMillis() - t0) / 1000.0;
+        long afterMem = runtime.totalMemory() - runtime.freeMemory();
+        long peakMemoryMB = Math.max(beforeMem, afterMem) / (1024 * 1024);
         double ratio = (double) origBytes / compBytes;
         double bpp = (compBytes * 8.0) / origBytes;
-        System.out.printf("  %-25s %8d -> %8d bytes  (%.2fx, %.2f bpp, %.3fs)%n",
-            name, origBytes, compBytes, ratio, bpp, sec);
-        return new Result(base, origBytes, compBytes, ratio, bpp, sec);
+        System.out.printf("  %-25s %8d -> %8d bytes  (%.2fx, %.2f bpp, %.3fs, %d MB)%n",
+            name, origBytes, compBytes, ratio, bpp, sec, peakMemoryMB);
+        return new Result(base, origBytes, compBytes, ratio, bpp, sec, peakMemoryMB);
     }
 }

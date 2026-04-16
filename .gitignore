@@ -1,7 +1,8 @@
 Data/
 bin/
+*.zip
+.vscode/
+
+AGENTS.md
 .claude/
 .codex
-*.zip
-AGENTS.md
-.vscode/

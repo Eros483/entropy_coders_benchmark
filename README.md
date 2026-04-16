@@ -4,6 +4,8 @@
 
 This project benchmarks multiple lossless compression pipelines written in plain Java. The transform layer uses `LZ77`, `LZSS`, `BWT + MTF`, `LZ78`, and `LZW`, and the entropy layer uses `Huffman`, `Arithmetic`, and `rANS`.
 
+Refer to `/docs` for further information on classes.
+
 No build tool or external dependencies are required. The project compiles with `javac`.
 
 ## Data Setup
@@ -24,6 +26,7 @@ javac -d bin -cp bin RunBench.java
 ```
 
 ### Basic Tests
+Checks compression by decoding the output, and verifying.
 
 ```bash
 java -cp bin benchmark.Test
@@ -60,7 +63,4 @@ The project includes 17 test files, including genome files and usual text docume
 ## TODO
 
 - Implement the objectives instructed in class.
-    - [ ] Add verification for compression
     - [ ] Measure peak memory consumption
-    - [ ] Fix up documentation and the readme
-        - [ ] documentation should have everything needed for the report
