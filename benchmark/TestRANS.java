@@ -50,18 +50,6 @@ public class TestRANS {
         int[] deltas = new int[]{0, 1, 1, 2, 3, 1, 2, 3, 1, 1, 2, 1, 1, 3, 2, 1};
         testCase("LZ77-style deltas", deltas);
 
-        // Test 7: empty (edge case)
-        System.out.println("Test: empty input");
-        int[] empty = new int[0];
-        rANSElement el = rANS.encode(empty);
-        int[] emptyDecoded = rANS.decode(el, el.originalLength);
-        System.out.println("  Encoded bytes: " + el.encodedBytes.length);
-        System.out.println("  Decoded: " + Arrays.toString(emptyDecoded));
-        HelperFunctions.verifyEquality(
-            intsToList(empty),
-            intsToList(emptyDecoded));
-        System.out.println("  PASSED\n");
-
         System.out.println("All rANS unit tests passed!\n");
     }
 

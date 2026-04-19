@@ -48,6 +48,15 @@ public class rANS {
             }
             f.freqs[best]++; sum++;
         }
+	while (sum > R) {
+	    int best = -1; double bestD = 0;
+	    for (int i = 0; i < n; i++) {
+		if (f.freqs[i] <= 1) continue; // never reduce below 1
+		double d = f.freqs[i] - (double)raw.get(f.alphabet[i]) * R / total;
+		if (best == -1 || d > bestD) { bestD = d; best = i; }
+	    }
+	    f.freqs[best]--; sum--;
+	}
         f.cumFreqs[0] = 0;
         for (int i = 0; i < n; i++) f.cumFreqs[i+1] = f.cumFreqs[i] + f.freqs[i];
         return f;
