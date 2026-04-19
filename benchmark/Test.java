@@ -87,6 +87,25 @@ public class Test {
 		System.out.println("Decoded String:   " + HelperFunctions.arrayListToString(output));
 		System.out.println();
 	}
+	public static void testLZ78(String str) throws Exception {
+	    System.out.println("Original String:  " + str);
+	    ArrayList<Character> data = HelperFunctions.stringToArrayList(str);
+		
+	    // Add EOF terminator as per your project's convention
+	    data.add('\0'); 
+		
+	    // Step 1: Encode
+	    LZ78Element lz78 = LZ78.encode(data);
+	    System.out.println("Encoding: " + lz78);
+		
+	    // Step 2: Decode
+	    ArrayList<Character> output = LZ78.decode(lz78);
+	    System.out.println("Decoded String:   " + HelperFunctions.arrayListToString(output));
+		
+	    // Step 3: Verify equality
+	    HelperFunctions.verifyEquality(data, output);
+	    System.out.println("Verification: PASSED\n");
+	}
 
 	public static void testLZSS(String str) {
 		System.out.println("Original String:  " + str);
@@ -125,6 +144,10 @@ public class Test {
 
 		System.out.println("*** Test LZ77 ***");
 		testLZ77("mississippimissississispsisp");
+		
+		System.out.println("*** LZ78 Test ***");
+    	testLZ78("ABABABA"); // Simple repeating pattern
+    	testLZ78("BABAABRRRA"); // Complex pattern
 
 		System.out.println("*** Test LZSS ***");
 		testLZSS("mississippimissississispsisp");

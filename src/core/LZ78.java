@@ -46,18 +46,42 @@ public class LZ78 {
         return new LZ78Element(dictIndices, nextChars);
     }
 
-    public static ArrayList<Character> decode(LZ78Element lz78) {
-        ArrayList<Character> msg = new ArrayList<>();
-        ArrayList<String> dictionary = new ArrayList<>();
-        dictionary.add("");
+    // public static ArrayList<Character> decode(LZ78Element lz78) {
+    //     ArrayList<Character> msg = new ArrayList<>();
+    //     ArrayList<String> dictionary = new ArrayList<>();
+    //     dictionary.add("");
 
-        for (int t = 0; t < lz78.dictIndex.size(); t++) {
-            String entry = dictionary.get(lz78.dictIndex.get(t));
-            if (lz78.nextChar.get(t) != '\0') entry += lz78.nextChar.get(t);
+    //     for (int t = 0; t < lz78.dictIndex.size(); t++) {
+    //         String entry = dictionary.get(lz78.dictIndex.get(t));
+    //         if (lz78.nextChar.get(t) != '\0') entry += lz78.nextChar.get(t);
             
-            for (char c : entry.toCharArray()) msg.add(c);
-            if (dictionary.size() < MAX_DICT_SIZE) dictionary.add(entry);
-        }
-        return msg;
+    //         for (char c : entry.toCharArray()) msg.add(c);
+    //         if (dictionary.size() < MAX_DICT_SIZE) dictionary.add(entry);
+    //     }
+    //     return msg;
+    // }
+    public static ArrayList<Character> decode(LZ78Element lz78) {
+            ArrayList<Character> msg = new ArrayList<>();
+            ArrayList<String> dictionary = new ArrayList<>();
+            dictionary.add(""); // Index 0 is the empty string [cite: 168]
+    
+            for (int t = 0; t < lz78.dictIndex.size(); t++) {
+                String entry = dictionary.get(lz78.dictIndex.get(t));
+                char next = lz78.nextChar.get(t);
+                
+                // Add the prefix from the dictionary [cite: 168]
+                for (char c : entry.toCharArray()) msg.add(c);
+                
+                // ALWAYS add the next character to the message to ensure 
+                // the output matches the input message length [cite: 169, 170]
+                msg.add(next);
+                
+                // Only update the dictionary if 'next' is not the EOF marker
+                // This maintains synchronization with the encoder's dictionary [cite: 164, 165]
+                if (next != '\0' && dictionary.size() < MAX_DICT_SIZE) {
+                    dictionary.add(entry + next);
+                }
+            }
+            return msg;
     }
 }
